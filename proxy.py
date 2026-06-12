@@ -1,5 +1,5 @@
-import os, asyncio, ssl
-from aiohttp import web, ClientSession, ClientTimeout
+import os, ssl
+from aiohttp import web, ClientSession, ClientTimeout, TCPConnector
 
 TARGET_HOST = os.environ.get("TARGET_HOST", "konoyves.shop")
 TARGET_PORT = int(os.environ.get("TARGET_PORT", "443"))
@@ -9,23 +9,20 @@ ssl_ctx.check_hostname = False
 ssl_ctx.verify_mode = ssl.CERT_NONE
 
 async def proxy_handler(request):
-    url = f"https://{TARGET_HOST}:{TARGET_PORT}{request.path_qs}"
-    headers = dict(request.headers)
     body = await request.read() if request.can_read_body else None
-    timeout = ClientTimeout(total=60)
-    async with ClientSession(timeout=timeout) as session:
+    headers = dict(request.headers)
+    headers["Host"] = TARGET_HOST
+    url = f"https://{TARGET_HOST}:{TARGET_PORT}{request.path_qs}"
+    timeout = ClientTimeout(total=30)
+    connector = TCPConnector(ssl=ssl_ctx)
+    async with ClientSession(timeout=timeout, connector=connector) as session:
         try:
             async with session.request(
-                method=request.method,
-                url=url,
-                headers=headers,
-                data=body,
-                ssl=ssl_ctx,
-                allow_redirects=False
+                method=request.method, url=url, headers=headers,
+                data=body, allow_redirects=False
             ) as resp:
-                resp_headers = dict(resp.headers)
-                for h in ["content-encoding", "transfer-encoding", "content-length"]:
-                    resp_headers.pop(h, None)
+                resp_headers = {k: v for k, v in resp.headers.items()
+                                if k.lower() not in ("content-encoding", "transfer-encoding", "content-length")}
                 resp_body = await resp.read()
                 return web.Response(body=resp_body, status=resp.status, headers=resp_headers)
         except Exception as e:
