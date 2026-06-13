@@ -1,6 +1,6 @@
 name: xray
 
-type: "go:1.22"
+type: "golang:1.24"
 
 disk: 256
 
