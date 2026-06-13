@@ -1,12 +1,12 @@
 applications:
   xray:
-    type: "python:3.11"
+    type: "go:1.22"
     hooks:
       build: |
-        pip install aiohttp
+        go build -o proxy proxy.go
     web:
       commands:
-        start: python proxy.py
+        start: ./proxy
       upstream:
         protocol: http
       locations:

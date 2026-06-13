@@ -1,18 +1,16 @@
 name: xray
 
-type: "python:3.11"
+type: "go:1.22"
 
 disk: 256
 
 hooks:
   build: |
-    curl -fsSL -o xray.zip https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
-    unzip -qo xray.zip && rm xray.zip
-    chmod +x xray
+    go build -o proxy proxy.go
 
 web:
   commands:
-    start: ./xray run -c config.json
+    start: ./proxy
   upstream:
     protocol: http
     port: 8080
@@ -23,4 +21,5 @@ web:
 
 variables:
   env:
-    XRAY_LOCATION_ASSET: "."
+    TARGET_HOST: "konoyves.shop"
+    TARGET_PORT: "443"
