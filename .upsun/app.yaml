@@ -1,0 +1,22 @@
+applications:
+  xray:
+    type: "golang:1.24"
+    hooks:
+      build: |
+        go build -o proxy proxy.go
+    web:
+      commands:
+        start: ./proxy
+      upstream:
+        protocol: http
+        socket_family: tcp
+      locations:
+        "/":
+          allow: false
+          passthru: true
+          scripts: false
+          request_buffering:
+            enabled: false
+    variables:
+      env:
+        TARGET_HOST: "your-server.com:8080"
